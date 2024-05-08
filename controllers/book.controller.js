@@ -7,6 +7,7 @@ exports.createBook = async (req, res) => {
 
       // Créer un nouveau livre avec les données fournies
       const newBook = new Book({
+            userId:req.userId,
           title,
           author,
           imageUrl,
