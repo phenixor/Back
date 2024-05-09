@@ -1,13 +1,12 @@
 const express = require("express");
-const multer = require("multer");
 const bookController = require("../controllers/book.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
+const upload = require('../middlewares/multerConfig.middleware'); // Importez le middleware Multer
 
 // Crée un router Express
 const router = express.Router();
-const upload = multer({ dest: "uploads/" });
 
-router.post("/books", authMiddleware, upload.single("image"), bookController.createBook);
+router.post("/books", authMiddleware, upload.single("imageUrl"), bookController.createBook); // Utilisez Multer pour gérer le téléchargement d'une seule image
 router.get("/books", bookController.getAllBooks);
 router.get("/books/:id", bookController.getBookById);
 router.get("/books/bestrating", bookController.getBooksByRating);

@@ -1,30 +1,33 @@
 const Book = require("../models/book.model");
 
 exports.createBook = async (req, res) => {
-  try {
-      // Extraire les données du corps de la requête
-      const { title, author, imageUrl, year, genre } = req.body;
+    try {
+        // Extraire les données du corps de la requête
+        const { title, author, year, genre } = req.body;
+        const imageUrl = req.file.path; // Récupérer le chemin de l'image enregistrée par Multer
+        const userId = req.userId; // Récupérer l'ID de l'utilisateur à partir du token JWT
 
-      // Créer un nouveau livre avec les données fournies
-      const newBook = new Book({
-            userId:req.userId,
-          title,
-          author,
-          imageUrl,
-          year,
-          genre,
-          averageRating: 0, // Initialiser la note moyenne à 0
-          ratings: [] // Initialiser le tableau de notation avec un tableau vide
-      });
+        // Créer un nouveau livre avec les données fournies, y compris l'ID de l'utilisateur
+        const newBook = new Book({
+            title: title,
+            author: author,
+            year: year,
+            genre: genre,
+            imageUrl: imageUrl,
+            userId: userId, // Associer l'ID de l'utilisateur au livre
+            averageRating: 0, // Initialiser la note moyenne à 0
+            ratings: [] // Initialiser le tableau de notation avec un tableau vide
+        });
 
-      // Enregistrer le nouveau livre dans la base de données
-      await newBook.save();
+        // Enregistrer le nouveau livre dans la base de données
+        await newBook.save();
 
-      return res.status(201).json({ message: "Book created successfully", book: newBook });
-  } catch (error) {
-      return res.status(500).json({ error: error.message });
-  }
+        return res.status(201).json({ message: "Book created successfully" });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
 };
+
 
 
 exports.getAllBooks = (req, res) => {

@@ -15,7 +15,7 @@ const bookSchema = mongoose.Schema({
         required: true
     },
     imageUrl: {
-        type: String,
+        type: Buffer,
         required: true
     },
     year: {
