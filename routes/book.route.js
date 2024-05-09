@@ -9,6 +9,7 @@ const router = express.Router();
 router.post("/books", authMiddleware, upload.single("imageUrl"), bookController.createBook); // Utilisez Multer pour gérer le téléchargement d'une seule image
 router.get("/books", bookController.getAllBooks);
 router.get("/books/:id", bookController.getBookById);
+router.put("/books/:id", authMiddleware, bookController.updateBook);
 router.get("/books/bestrating", bookController.getBooksByRating);
 router.post("/books/:id/rating", authMiddleware, bookController.addRating);
 router.delete("/books/:id", authMiddleware, bookController.deleteBook);

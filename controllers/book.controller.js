@@ -1,4 +1,6 @@
 const Book = require("../models/book.model");
+const fs = require("fs");
+const path = require("path");
 
 exports.createBook = async (req, res) => {
     try {
@@ -28,8 +30,6 @@ exports.createBook = async (req, res) => {
     }
 };
 
-
-
 exports.getAllBooks = (req, res) => {
     Book.find()
         .then(books => res.status(200).json(books))
@@ -48,7 +48,6 @@ exports.getBookById = (req, res) => {
       })
       .catch(error => res.status(500).json({ error }));
 }
-
 
 exports.getBooksByRating = (req, res) => {
   Book.find()
@@ -128,4 +127,47 @@ exports.deleteBook = async (req, res) => {
   } catch (error) {
       return res.status(500).json({ error: error.message });
   }
+};
+
+exports.updateBook = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.userId; // Récupérer l'ID de l'utilisateur à partir du token JWT
+        const { title, author, year, genre } = req.body;
+        let imageUrl = req.body.imageUrl; // Récupérer le chemin de la nouvelle image
+
+        // Vérifier si le livre existe
+        const book = await Book.findById(id);
+        if (!book) {
+            return res.status(404).json({ message: "Book not found" });
+        }
+
+        // Vérifier si l'utilisateur est autorisé à mettre à jour ce livre
+        if (book.userId.toString() !== userId) {
+            return res.status(403).json({ message: "Unauthorized: You are not authorized to update this book" });
+        }
+
+        // Si une nouvelle image est téléchargée, mettre à jour le chemin de l'image
+        if (req.file) {
+            imageUrl = req.file.path;
+            // Supprimer l'ancienne image si elle existe
+            if (book.imageUrl) {
+                fs.unlinkSync(book.imageUrl);
+            }
+        }
+
+        // Mettre à jour les données du livre
+        book.title = title;
+        book.author = author;
+        book.year = year;
+        book.genre = genre;
+        book.imageUrl = imageUrl;
+
+        // Enregistrer les modifications dans la base de données
+        await book.save();
+
+        return res.status(200).json({ message: "Book updated successfully", book });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
 };
