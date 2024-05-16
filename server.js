@@ -2,11 +2,16 @@ const mongoose = require("mongoose");
 const userRouter = require("./routes/user.route");
 const bookRouter = require("./routes/book.route");
 require('dotenv').config();
-
+const cors = require("cors");
+const path = require("path");
 
 const express = require('express')
 const app = express()
 const port = 4000
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.use(cors())
 
 app.get('/', (req, res) => {
   res.send('Hello World!')

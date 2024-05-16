@@ -54,7 +54,7 @@ exports.login = (req, res) => {
                       process.env.JWT_SECRET,
                       { expiresIn: "24h" }
                   );
-                  res.status(200).json({ token });
+                  res.status(200).json({ token, userId:user._id });
               })
               .catch(error => res.status(500).json({ error }));
       })
