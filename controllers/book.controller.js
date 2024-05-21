@@ -2,19 +2,20 @@ const Book = require("../models/book.model");
 const fs = require("fs");
 const path = require("path");
 
+
 exports.createBook = async (req, res) => {
     try {
         const { book } = req.body;
-        const bookObject = JSON.parse(book);
-        const imageUrl = req.file.path; // Récupérer le chemin de l'image enregistrée par Multer
-        const userId = req.userId; // Récupérer l'ID de l'utilisateur à partir du token JWT
+        const { filename } = req.file || '';
+        const { userId } = req;
 
-        const newBook = new Book({
-            ...bookObject,
-            imageUrl: imageUrl,
-            userId: userId, // Associer l'ID de l'utilisateur au livre
-        });
+        const newBookData = {
+            ...JSON.parse(book),
+            imageUrl: filename ? `http://localhost:4000/uploads/${filename}` : '',
+            userId,
+        };
 
+        const newBook = new Book(newBookData);
         await newBook.save();
 
         return res.status(201).json({ message: "Book created successfully" });
@@ -42,17 +43,21 @@ exports.getBookById = (req, res) => {
         .catch(error => res.status(500).json({ error }));
 };
 
-exports.getBooksByRating = async (req, res) => {
-    try {
-        const books = await Book.find();
-        const sortedBooks = books.sort((a, b) => b.averageRating - a.averageRating);
-        const topThreeBooks = sortedBooks.slice(0, 3);
-        res.status(200).json(topThreeBooks);
-    } catch (error) {
-        res.status(500).json({ error: 'Erreur lors de la récupération des livres' });
-    }
+exports.getBooksByRating = (req, res) => {
+    Book.find()
+        .then(books => {
+            return books;
+        })
+        .then(books => {
+            const sortedBooks = books.sort((a, b) => b.averageRating - a.averageRating);
+            const topThreeBooks = sortedBooks.slice(0, 3);
+            res.status(200).json(topThreeBooks);
+        })
+        .catch(error => {
+            console.error("Error retrieving books:", error); // Log des erreurs
+            res.status(500).json({ error: 'Error retrieving top rated books' });
+        });
 };
-
 
 exports.addRating = async (req, res) => {
     const { rating } = req.body;
@@ -82,7 +87,8 @@ exports.addRating = async (req, res) => {
 
         await book.save();
 
-        return res.status(201).json({ message: "Rating added successfully", book });
+        // Return only the rating in the response
+        return res.status(201).json(book);
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
@@ -104,10 +110,12 @@ exports.deleteBook = async (req, res) => {
         }
 
         if (book.imageUrl) {
-            fs.unlinkSync(book.imageUrl);
+            const filename = book.imageUrl.split("http://localhost:4000/uploads")[1]
+            const directory = path.join(__dirname, '../uploads', filename)
+            fs.unlinkSync(directory);
         }
 
-        await book.remove();
+        await book.deleteOne();
 
         return res.status(200).json({ message: "Book deleted successfully" });
     } catch (error) {
@@ -119,35 +127,33 @@ exports.updateBook = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.userId;
-        const { title, author, year, genre } = req.body;
-        let imageUrl = req.body.imageUrl;
+        const {book} = req.body;
+        const bookjson = JSON.parse(book)
+        const { title, author, year, genre} = bookjson;
 
-        const book = await Book.findById(id);
-        if (!book) {
+        const bookAPI = await Book.findById(id);
+        if (!bookAPI) {
             return res.status(404).json({ message: "Book not found" });
         }
 
-        if (book.userId.toString() !== userId) {
+        if (bookAPI.userId.toString() !== userId) {
             return res.status(403).json({ message: "Unauthorized: You are not authorized to update this book" });
         }
 
-        if (req.file) {
-            imageUrl = req.file.path;
-            if (book.imageUrl) {
-                fs.unlinkSync(book.imageUrl);
-            }
-        }
+        
+        bookAPI.imageUrl = `http://localhost:4000/uploads/${req.file.filename}`;
+        
 
-        book.title = title;
-        book.author = author;
-        book.year = year;
-        book.genre = genre;
-        book.imageUrl = imageUrl;
+        bookAPI.title = title;
+        bookAPI.author = author;
+        bookAPI.year = year;
+        bookAPI.genre = genre;
 
-        await book.save();
+        await bookAPI.save();
 
         return res.status(200).json({ message: "Book updated successfully", book });
     } catch (error) {
+        console.error("Error updating book:", error);
         return res.status(500).json({ error: error.message });
     }
 };
