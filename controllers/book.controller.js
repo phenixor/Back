@@ -128,7 +128,7 @@ exports.updateBook = async (req, res) => {
         const { id } = req.params;
         const userId = req.userId;
         const {book} = req.body;
-        const bookjson = JSON.parse(book)
+        const bookjson = req.file ? JSON.parse(book) : req.body;
         const { title, author, year, genre} = bookjson;
 
         const bookAPI = await Book.findById(id);
@@ -140,8 +140,9 @@ exports.updateBook = async (req, res) => {
             return res.status(403).json({ message: "Unauthorized: You are not authorized to update this book" });
         }
 
-        
-        bookAPI.imageUrl = `http://localhost:4000/uploads/${req.file.filename}`;
+        if(req.file){
+            bookAPI.imageUrl = `http://localhost:4000/uploads/${req.file.filename}`;
+        }
         
 
         bookAPI.title = title;
